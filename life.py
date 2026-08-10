@@ -33,6 +33,7 @@ def step(grid):
 
 
 TOP8_INDEX = 7  # Top-8, 0-indexed
+RIGHT_COLUMN_X = SIZE  # scene column note-space x, one button per row
 
 # A horizontal blinker: alone it oscillates forever rather than settling
 # into a static still life, so a tap has a real chance of staying lively.
@@ -42,6 +43,12 @@ STAMP_OFFSETS = [(-1, 0), (0, 0), (1, 0)]
 def stamp(grid, x, y):
     for dx, dy in STAMP_OFFSETS:
         grid[(y + dy) % SIZE][(x + dx) % SIZE] = True
+
+
+def nudge_row_right(grid, y):
+    """Shifts row y one cell to the right, wrapping around."""
+    row = grid[y]
+    grid[y] = [row[(x - 1) % SIZE] for x in range(SIZE)]
 
 
 def perturb(grid, count=20):
@@ -80,6 +87,7 @@ def apply_touches(lp, grid):
 
     A press on a dead grid pad stamps a small blinker there; a press on a
     live pad kills just that cell. A press on Top-8 injects random cells.
+    A press on a right-hand scene button nudges that row right, wrapping.
     """
     while True:
         evt = lp.poll()
@@ -90,7 +98,9 @@ def apply_touches(lp, grid):
             continue
         if kind == "grid":
             x, y = pos
-            if x < SIZE and y < SIZE:
+            if x == RIGHT_COLUMN_X:
+                nudge_row_right(grid, y)
+            elif x < SIZE and y < SIZE:
                 if grid[y][x]:
                     grid[y][x] = False
                 else:
